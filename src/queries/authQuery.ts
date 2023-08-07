@@ -18,9 +18,8 @@ export const useLoginQuery = () => {
     router.push("/");
     SucessToast("Login Sucessfully");
   };
-
   const onError = (err: any) => {
-    ErrorToast(err.response.data.message);
+    ErrorToast(err.response.data.detail);
   };
 
   const { isLoading, mutate } = useMutation({

@@ -9,7 +9,7 @@ function Toast() {
   );
 }
 
-export const SucessToast = (alertMessage = "Sucessfully done") => {
+export const SucessToast = (alertMessage = "Successfully done") => {
   return toast.success(alertMessage, {
     id: "sucess_id",
     style: {

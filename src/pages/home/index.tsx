@@ -10,14 +10,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useGetProperty } from "@/queries/property";
-import { useGetCategory, useGetLocation } from "@/queries/category";
+import { useGetCategory, useGetDistrict } from "@/queries/category";
 
 const Home = () => {
   const router = useRouter();
 
   const { data } = useGetProperty();
   const { data: categoryData } = useGetCategory();
-  const { data: locationdata } = useGetLocation();
+  const { data: locationdata } = useGetDistrict();
 
   console.log("cate", locationdata?.data);
 

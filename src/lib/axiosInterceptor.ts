@@ -34,19 +34,16 @@ axiosClient.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-
 axiosClient.interceptors.response.use(
   (res) => {
     return res;
   },
   async (err) => {
     const originalConfig = err.config;
-
-    if (originalConfig.url !== "/user/login" && err.response) {
+    if (originalConfig.url !== "/api/login" && err.response) {
       // Access Token was expired
       if (err.response.status === 401 && !originalConfig._retry) {
         originalConfig._retry = true;
-
         try {
           const rs = await axios.post(`${BASE_URL}/token/refresh/`, {
             refresh: Cookies.get("refresh_token")!,
@@ -72,7 +69,6 @@ axiosClient.interceptors.response.use(
         }
       }
     }
-
     return Promise.reject(err);
   }
 );

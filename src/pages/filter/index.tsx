@@ -6,7 +6,7 @@ import royal from "../../assets/images/royal.webp";
 import home from "../../assets/images/home.webp";
 import PriceRangeInput from "@/components/priceRange";
 import { useGetProperty } from "@/queries/property";
-import { useGetCategory, useGetLocation } from "@/queries/category";
+import { useGetCategory, useGetDistrict } from "@/queries/category";
 
 const Filter = () => {
   const [type, setType] = useState("");
@@ -59,7 +59,7 @@ const Filter = () => {
   console.log("filter", propertyData);
 
   const { data: categoryData } = useGetCategory();
-  const { data: locationdata } = useGetLocation();
+  const { data: locationdata } = useGetDistrict();
 
   return (
     <div>

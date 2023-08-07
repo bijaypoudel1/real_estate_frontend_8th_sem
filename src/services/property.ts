@@ -15,7 +15,17 @@ export const getCategory = async () => {
   return res;
 };
 
-export const getLocation = async () => {
+export const getSubCategory = async () => {
+  const res = await axiosClient.get("api/sub-categories/");
+  return res;
+};
+
+export const getDistricts = async () => {
   const res = await axiosClient.get("api/property-location/");
+  return res;
+};
+
+export const getStates = async () => {
+  const res = await axiosClient.get("api/state/");
   return res;
 };

@@ -1,20 +1,31 @@
 import CustomRadio from "@/components/forms/radio";
-import { useState } from "react";
-import MapboxMap from "@/components/map";
+import { useEffect, useState } from "react";
 import ImageUploader from "@/components/imageuploader";
 import { useRouter } from "next/router";
 import { SucessToast } from "@/components/common/toast";
 import { useAddProperty } from "@/queries/property";
 import { isGoogleMapIframe, setIframeWidth } from "@/utils/global";
+import {
+  useGetCategory,
+  useGetDistrict,
+  useGetState,
+  useGetSubCategory,
+} from "@/queries/category";
 
 const AddProperty = () => {
   const router = useRouter();
   const [type, setType] = useState("");
   const [category, setCategory] = useState("");
+  const [subCategoryOption, setSubcategory] = useState([]);
+  const [districtOption, setDistrictOption] = useState([]);
   const [heightLight, setHeightLight] = useState("");
-  const [propertylocation, setLocation] = useState("");
+  const [propertyLocation, setLocation] = useState("");
   const [area, setArea] = useState("");
   const [landArea, setLandArea] = useState("");
+  const [bigha, setBigha] = useState("");
+  const [katha, setkatha] = useState("");
+  const [dhur, setDhur] = useState("");
+  // const
   const [roadType, setRoadType] = useState("");
   const [priceOnCall, setPriceOnCall] = useState<any>(false);
   const [title, setTitle] = useState("");
@@ -22,18 +33,13 @@ const AddProperty = () => {
   const [price, setPrice] = useState("");
   const [bedroom, setBedroom] = useState("");
   const [bathroom, setBathroom] = useState("");
+  const [selectedSubCategory, setSelectedSubCategory] = useState("");
+  const [districtValue, setDistrictValue] = useState("");
+  const [municipality, setMunicipality] = useState("");
+  const [toleName, setToleName] = useState("");
 
-  console.log("type", type);
+  console.log("type", propertyLocation);
 
-  const locationOptions = [
-    { value: "koshi", label: "Koshi" },
-    { value: "madesh", label: "Madhesh" },
-    { value: "Bagmati", label: "Bagmati" },
-    { value: "Gandaki", label: "Gandaki" },
-    { value: "Lumbini", label: "Lumbini" },
-    { value: "Sudurpaschim", label: "Sudurpaschim" },
-    { value: "Karnali", label: "Karnali" },
-  ];
   const roadOptions = [
     { value: "paved", label: "paved" },
     { value: "blacked topped", label: "blacked topped" },
@@ -54,14 +60,50 @@ const AddProperty = () => {
     { value: "Karnali", label: "north-west" },
   ];
 
-  const categoryOptions = [
-    { value: "house", label: "House" },
-    { value: "land", label: "Land" },
-    { value: "flats", label: "Flats" },
-    { value: "appartment", label: "appartment" },
-  ];
+  const { data: categoryData } = useGetCategory();
+  const { data: subCategory } = useGetSubCategory();
+  const { data: districtData } = useGetDistrict();
+  const { data: stateData } = useGetState();
 
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  console.log("sa", stateData);
+
+  const stateOptions = stateData?.data?.map((item: any) => ({
+    value: item.id,
+    label: item.state,
+  }));
+
+  const categoryOptions = categoryData?.data?.map((item: any) => ({
+    value: item.id,
+    label: item.category,
+  }));
+
+  useEffect(() => {
+    category &&
+      setSubcategory(() => {
+        return subCategory?.data
+          ?.filter((item: any) => item.category == category)
+          ?.map((value: any) => ({
+            value: value.id,
+            label: value.sub_category,
+          }));
+      });
+  }, [category]);
+
+  useEffect(() => {
+    propertyLocation &&
+      setDistrictOption(() => {
+        return districtData?.data
+          ?.filter((item: any) => item.state == propertyLocation)
+          ?.map((value: any) => ({
+            value: value.id,
+            label: value.district,
+          }));
+      });
+  }, [propertyLocation]);
+
+  console.log("sub", districtOption);
+
+  const [selectedImages, setSelectedImages] = useState<any>([]);
 
   const [mapValue, setMapValue] = useState<string | undefined>();
 
@@ -71,17 +113,29 @@ const AddProperty = () => {
     const formData = new FormData();
     formData.append("title", title);
     formData.append("listing_type", type);
-    formData.append("category", "1");
-    formData.append("sub_category", "3");
+    formData.append("category", category);
+    formData.append("state", propertyLocation);
+    formData.append("property_location", districtValue);
+    formData.append("sub_category", selectedSubCategory);
+    formData.append("municipality", municipality);
+    formData.append("tole_name", toleName);
+    formData.append("kaththa", katha);
+    formData.append("dhur", dhur);
+    formData.append("bigha", bigha);
     formData.append("build_year", "2023-07-20");
-    formData.append("price", price);
+    formData.append("price", price !== "" ? price : "1");
+    formData.append("price_on_call", priceOnCall);
+    formData.append("google_map_iframe", String(mapValue));
     formData.append("bedrooms", bedroom);
     formData.append("bathrooms", bathroom);
     formData.append("property_location", "1");
-    formData.append("state", "1");
-
     formData.append("area", landArea);
-    formData.append("image", selectedImage ?? "");
+    formData.append("user", "1");
+
+    // formData.append("image", selectedImages ?? "");
+    for (let i = 0; i < selectedImages.length; i++) {
+      formData.append("image", selectedImages[i]);
+    }
     formData.append("description", description);
     // const payload = {
     //   title: title,
@@ -97,6 +151,8 @@ const AddProperty = () => {
     //   image: selectedImage,
     //   property_status: "new",
     // };
+    console.log(formData);
+
     mutate(formData);
   };
 
@@ -209,14 +265,31 @@ const AddProperty = () => {
           <div className="flex flex-col gap-5">
             {/* land type */}
             <div className="mt-3">
-              <p className="project_label__DEjnY">Land Type*</p>
-              <select className="undefined">
+              <p className="">
+                Select{" "}
+                {
+                  categoryOptions?.find((item: any) => item.value === category)
+                    ?.label
+                }{" "}
+                Type*
+              </p>
+              <select
+                className="rounded-lg"
+                value={selectedSubCategory}
+                onChange={(e) => setSelectedSubCategory(e.target.value)}
+              >
                 <option selected disabled value="">
-                  Select a Land Type
+                  Select a{" "}
+                  {
+                    categoryOptions?.find(
+                      (item: any) => item.value === category
+                    )?.label
+                  }{" "}
+                  Type
                 </option>
-                <option value="Agricultural">Agricultural</option>
-                <option value="Commercial">Commercial</option>
-                <option value="Others">Others</option>
+                {subCategoryOption?.map((item: { value: any; label: any }) => {
+                  return <option value={item?.value}>{item?.label}</option>;
+                })}
               </select>
             </div>
             {/* location */}
@@ -224,9 +297,49 @@ const AddProperty = () => {
               <p className="text-sm text-gray-900">PROPERTY LOCATION</p>
               <div className="cursor-pointer mt-3 w-fit">
                 <CustomRadio
-                  value={propertylocation}
+                  value={propertyLocation}
                   setValue={setLocation}
-                  radioOptions={locationOptions}
+                  radioOptions={stateOptions}
+                />
+              </div>
+            </div>
+            {/* district and muncipility */}
+            <div className="flex gap-10 items-center">
+              <div className="mt-3">
+                <p className="project_label__DEjnY">DISTRICT</p>
+                <select
+                  className="rounded-lg"
+                  value={districtValue}
+                  onChange={(e) => setDistrictValue(e.target.value)}
+                >
+                  <option disabled selected value="">
+                    Select a district
+                  </option>
+                  {districtOption?.map((item: any, index) => {
+                    return (
+                      <option key={index} value={item.value}>
+                        {item.label}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+              <div className="mt-3">
+                <p className="project_label__DEjnY">MUNICIPALITY</p>
+                <input
+                  value={municipality}
+                  onChange={(e) => setMunicipality(e.target.value)}
+                  type="text"
+                  className="border-b w-full mt-1 border-b-gray-900 rounded-lg  outline-none"
+                />
+              </div>
+              <div className="mt-3">
+                <p className="project_label__DEjnY">Tole Name</p>
+                <input
+                  value={toleName}
+                  onChange={(e) => setToleName(e.target.value)}
+                  type="text"
+                  className="border-b w-full mt-1 border-b-gray-900 rounded-lg  outline-none"
                 />
               </div>
             </div>
@@ -236,7 +349,7 @@ const AddProperty = () => {
                 value={bedroom}
                 onChange={(e) => setBedroom(e.target.value)}
                 type="number"
-                className="border-b w-full mt-1 border-b-gray-900 outline-none"
+                className="border-b w-full mt-1 border-b-gray-900 rounded-lg  outline-none"
               />
             </div>
             <div className="w-[10%]">
@@ -245,65 +358,10 @@ const AddProperty = () => {
                 value={bathroom}
                 onChange={(e) => setBathroom(e.target.value)}
                 type="number"
-                className="border-b w-full mt-1 border-b-gray-900 outline-none"
+                className="border-b w-full mt-1 border-b-gray-900 rounded-lg  outline-none"
               />
             </div>
-            {/* district and muncipility */}
-            <div className="flex gap-10 items-center">
-              <div className="mt-3">
-                <p className="project_label__DEjnY">DISTRICT</p>
-                <select>
-                  <option disabled selected value="">
-                    Select a district
-                  </option>
-                  <option value="Mechi">Mechi</option>
-                  <option value="Biratnagar">Biratnagar</option>
-                  <option value="Taplejung">Taplejung</option>
-                  <option value="Dhankuta">Dhankuta</option>
-                  <option value="Bhojpur">Bhojpur</option>
-                  <option value="Hanumannagar">Hanumannagar</option>
-                  <option value="Sagarmatha">Sagarmatha</option>
-                  <option value="Janakpur">Janakpur</option>
-                  <option value="Dolakha">Dolakha</option>
-                  <option value="Chautara">Chautara</option>
-                  <option value="Kathmandu">Kathmandu</option>
-                  <option value="Bara">Bara</option>
-                  <option value="Trishuli">Trishuli</option>
-                  <option value="Rapti">Rapti</option>
-                  <option value="Gorkha">Gorkha</option>
-                  <option value="Pokhara">Pokhara</option>
-                  <option value="Syangja">Syangja</option>
-                  <option value="Lumbini">Lumbini</option>
-                  <option value="Baglung">Baglung</option>
-                  <option value="Gulmi">Gulmi</option>
-                  <option value="Kapilavastu">Kapilavastu</option>
-                  <option value="Pyuthan">Pyuthan</option>
-                  <option value="Humla">Humla</option>
-                  <option value="Karnali">Karnali</option>
-                  <option value="Jajarkot">Jajarkot</option>
-                  <option value="Salyan">Salyan</option>
-                  <option value="Dailekh">Dailekh</option>
-                  <option value="Nepalganj">Nepalganj</option>
-                  <option value="Bajhang">Bajhang</option>
-                  <option value="Doti">Doti</option>
-                  <option value="Dhangadhi">Dhangadhi</option>
-                  <option value="Mahakali">Mahakali</option>
-                </select>
-              </div>
-              <div className="mt-3">
-                <p className="project_label__DEjnY">MUNCIPILITY</p>
-                <select>
-                  <option disabled selected value="">
-                    Select a muncipility
-                  </option>
-                  <option value="Bhadrapur">Bhadrapur Municipality</option>
-                  <option value="Mechinagar">Mechinagar Municipality</option>
-                  <option value="Kankai">Kankai Municipality</option>
-                  <option value="Damak">Damak Municipality</option>
-                  <option value="Arjundhara">Arjundhara Municipality</option>
-                </select>
-              </div>
-            </div>
+
             {/* heightlight */}
             <div className="mt-3">
               <p className="text-sm text-gray-900">PROPERTY HEIGHTLIGHT</p>
@@ -317,7 +375,7 @@ const AddProperty = () => {
             </div>
             {/* area */}
             <div className="mt-3">
-              <p className="text-sm text-gray-900">PROPERTY AREA</p>
+              <p className="text-sm text-gray-900">PROPERTY TYPOGRAPHY</p>
               <div className="cursor-pointer mt-3 w-fit">
                 <CustomRadio
                   value={area}
@@ -337,35 +395,39 @@ const AddProperty = () => {
               <div className="flex gap-10">
                 <div className="flex gap-2 items-center">
                   <input
-                    value={landArea}
-                    onChange={(e) => setLandArea(e.target.value)}
+                    value={bigha}
+                    onChange={(e) => setBigha(e.target.value)}
                     type="number"
-                    className="border-b w-32 mt-1 border-b-gray-900 outline-none"
+                    className="border-b rounded-lg w-32 mt-1 border-b-gray-900 outline-none"
                   />
                   <p>BIGHA</p>
                 </div>
                 <div className="flex gap-2 items-center">
                   <input
+                    value={katha}
+                    onChange={(e) => setkatha(e.target.value)}
                     type="number"
-                    className="border-b w-32 mt-1 border-b-gray-900 outline-none"
+                    className="border-b w-32 mt-1 rounded-lg border-b-gray-900 outline-none"
                   />
                   <p>KATHA</p>
                 </div>
                 <div className="flex gap-2 items-center">
                   <input
+                    value={dhur}
+                    onChange={(e) => setDhur(e.target.value)}
                     type="number"
-                    className="border-b w-32 mt-1 border-b-gray-900 outline-none"
+                    className="border-b w-32 mt-1 rounded-lg border-b-gray-900 outline-none"
                   />
                   <p>DHUR</p>
                 </div>
               </div>
             </div>
             {/* location select */}
-            <div className="h-[60vh] bg-gray-200">
+            <div className="bg-gray-200">
               <div className="border-2">
                 {isGoogleMapIframe(mapValue) && (
                   <div
-                    className="w-screen"
+                    className="w-[1000px]"
                     dangerouslySetInnerHTML={{
                       __html: setIframeWidth(mapValue, "1200px"),
                     }}
@@ -379,7 +441,7 @@ const AddProperty = () => {
               value={mapValue}
               onChange={(e) => setMapValue(e.target.value)}
               placeholder="Enter Google Map Iframe"
-              className="border-b w-full mt-1 border-b-gray-900 outline-none"
+              className="border-b w-full mt-1 border-b-gray-900 rounded-lg  outline-none"
             />
             {mapValue &&
               mapValue?.length > 0 &&
@@ -400,8 +462,8 @@ const AddProperty = () => {
             </div>
             {/* image */}
             <ImageUploader
-              setSelectedImage={setSelectedImage}
-              selectedImage={selectedImage}
+              setSelectedImages={setSelectedImages}
+              selectedImages={selectedImages}
             />
             {/* payment */}
             <div className="">
@@ -433,16 +495,16 @@ const AddProperty = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 type="text"
-                className="border-b w-full mt-1 border-b-gray-900 outline-none"
+                className="border-b w-full mt-1 border-b-gray-900 rounded-lg  outline-none"
               />
             </div>
             <div className="">
-              <p>Descripton</p>
-              <input
+              <p>Description</p>
+              <textarea
+                rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                type="text"
-                className="border-b w-full mt-1 border-b-gray-900 outline-none"
+                className="border-b w-full mt-1 border-b-gray-900 rounded-lg  outline-none"
               />
             </div>
             <div className="mt-4">
